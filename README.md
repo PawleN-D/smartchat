@@ -63,6 +63,7 @@ Copy `.env.example` to `.env` and set:
 - `WHATSAPP_ACCESS_TOKEN`
 - `WHATSAPP_PHONE_NUMBER_ID`
 - `WHATSAPP_GRAPH_VERSION`
+- `WHATSAPP_APP_SECRET`
 
 ## 3) Local Setup
 

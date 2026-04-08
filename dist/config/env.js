@@ -4,9 +4,10 @@ const REQUIRED_ENV_VARS = [
     "WHATSAPP_VERIFY_TOKEN",
     "WHATSAPP_ACCESS_TOKEN",
     "WHATSAPP_PHONE_NUMBER_ID",
+    "WHATSAPP_APP_SECRET",
 ];
 function toInt(value, fallback) {
-    const parsed = Number.parseInt(value, 10);
+    const parsed = Number.parseInt(value ?? "", 10);
     return Number.isNaN(parsed) ? fallback : parsed;
 }
 export function loadEnv(rawEnv = process.env) {
@@ -25,5 +26,6 @@ export function loadEnv(rawEnv = process.env) {
         WHATSAPP_ACCESS_TOKEN: rawEnv.WHATSAPP_ACCESS_TOKEN,
         WHATSAPP_PHONE_NUMBER_ID: rawEnv.WHATSAPP_PHONE_NUMBER_ID,
         WHATSAPP_GRAPH_VERSION: rawEnv.WHATSAPP_GRAPH_VERSION ?? "v20.0",
+        WHATSAPP_APP_SECRET: rawEnv.WHATSAPP_APP_SECRET,
     });
 }

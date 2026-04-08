@@ -1,11 +1,28 @@
-export class ContactService {
-  prisma: any;
+import {
+  Prisma,
+  type Contact,
+  type ContactType,
+  type PrismaClient,
+} from "@prisma/client";
 
-  constructor({ prisma }: any) {
+interface GetOrCreateInput {
+  waId: string;
+  name: string | null;
+}
+
+interface GetOrCreateResult {
+  contact: Contact;
+  created: boolean;
+}
+
+export class ContactService {
+  prisma: PrismaClient;
+
+  constructor({ prisma }: { prisma: PrismaClient }) {
     this.prisma = prisma;
   }
 
-  async getOrCreate({ waId, name }) {
+  async getOrCreate({ waId, name }: GetOrCreateInput): Promise<GetOrCreateResult> {
     const existing = await this.prisma.contact.findUnique({
       where: { waId },
     });
@@ -32,18 +49,26 @@ export class ContactService {
       });
 
       return { contact: created, created: true };
-    } catch (error: any) {
-      if (error?.code === "P2002") {
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
         const recovered = await this.prisma.contact.findUnique({
           where: { waId },
         });
+        if (!recovered) {
+          throw new Error(
+            `Contact recovery failed after duplicate key for waId=${waId}`
+          );
+        }
         return { contact: recovered, created: false };
       }
       throw error;
     }
   }
 
-  async updateType(contactId, type) {
+  async updateType(contactId: string, type: ContactType): Promise<Contact> {
     return this.prisma.contact.update({
       where: { id: contactId },
       data: {
@@ -57,7 +82,7 @@ export class ContactService {
     });
   }
 
-  async markDisambiguationAsked(contactId) {
+  async markDisambiguationAsked(contactId: string): Promise<Contact> {
     return this.prisma.contact.update({
       where: { id: contactId },
       data: {

@@ -1,16 +1,38 @@
 import { DISAMBIGUATION_QUESTION } from "../config/prompts.js";
+import type { AppLogger } from "../types/app.js";
+import type { NormalizedInboundMessage } from "../types/webhook.js";
+import type { AILogService } from "./ai-log.service.js";
+import type { ClassificationService } from "./classification.service.js";
+import type { ContactService } from "./contact.service.js";
+import type { MessageLogService } from "./message-log.service.js";
+import type { OpenAIService } from "./openai.service.js";
 import { RouteAction } from "./routing.service.js";
+import type { RoutingService } from "./routing.service.js";
+import type { SessionService } from "./session.service.js";
+import type { WhatsAppService } from "./whatsapp.service.js";
+
+interface WebhookServiceDeps {
+  contactService: ContactService;
+  messageLogService: MessageLogService;
+  aiLogService: AILogService;
+  sessionService: SessionService;
+  classificationService: ClassificationService;
+  routingService: RoutingService;
+  openaiService: OpenAIService;
+  whatsappService: WhatsAppService;
+  logger: AppLogger;
+}
 
 export class WebhookService {
-  contactService: any;
-  messageLogService: any;
-  aiLogService: any;
-  sessionService: any;
-  classificationService: any;
-  routingService: any;
-  openaiService: any;
-  whatsappService: any;
-  logger: any;
+  contactService: ContactService;
+  messageLogService: MessageLogService;
+  aiLogService: AILogService;
+  sessionService: SessionService;
+  classificationService: ClassificationService;
+  routingService: RoutingService;
+  openaiService: OpenAIService;
+  whatsappService: WhatsAppService;
+  logger: AppLogger;
 
   constructor({
     contactService,
@@ -22,7 +44,7 @@ export class WebhookService {
     openaiService,
     whatsappService,
     logger,
-  }: any) {
+  }: WebhookServiceDeps) {
     this.contactService = contactService;
     this.messageLogService = messageLogService;
     this.aiLogService = aiLogService;
@@ -34,19 +56,36 @@ export class WebhookService {
     this.logger = logger;
   }
 
-  async processInboundMessages(messages) {
+  async processInboundMessages(messages: NormalizedInboundMessage[]): Promise<void> {
     for (const message of messages) {
       await this.processSingleInboundMessage(message);
     }
   }
 
-  async processSingleInboundMessage(message) {
+  async processSingleInboundMessage(
+    message: NormalizedInboundMessage
+  ): Promise<void> {
     const { contact: initialContact } = await this.contactService.getOrCreate({
       waId: message.waId,
       name: message.name,
     });
 
-    await this.messageLogService.logInbound(initialContact.id, message);
+    const inboundLog = await this.messageLogService.logInbound(
+      initialContact.id,
+      message
+    );
+
+    if (inboundLog.status === "duplicate") {
+      this.logger.info(
+        {
+          waId: message.waId,
+          waMessageId: inboundLog.waMessageId,
+        },
+        "Skipping duplicate inbound message"
+      );
+      return;
+    }
+
     await this.sessionService.touchInbound(initialContact.id, message.timestamp);
 
     const inboundCount = await this.messageLogService.countInboundForContact(
@@ -74,7 +113,10 @@ export class WebhookService {
       });
 
       if (classification.type !== "unknown") {
-        contact = await this.contactService.updateType(contact.id, classification.type);
+        contact = await this.contactService.updateType(
+          contact.id,
+          classification.type
+        );
       }
     }
 

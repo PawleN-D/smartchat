@@ -8,8 +8,17 @@ import { RoutingService } from "./services/routing.service.js";
 import { SessionService } from "./services/session.service.js";
 import { WebhookService } from "./services/webhook.service.js";
 import { WhatsAppService } from "./services/whatsapp.service.js";
+import type { AppContainer, AppLogger, EnvConfig } from "./types/app.js";
 
-export function buildContainer({ env, logger }) {
+interface BuildContainerOptions {
+  env: EnvConfig;
+  logger: AppLogger;
+}
+
+export function buildContainer({
+  env,
+  logger,
+}: BuildContainerOptions): AppContainer {
   const prisma = createPrismaClient();
 
   const contactService = new ContactService({ prisma });

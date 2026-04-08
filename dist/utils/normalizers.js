@@ -1,3 +1,9 @@
+const REDACTED_FIELDS = new Set([
+    "authorization",
+    "access_token",
+    "token",
+    "appsecret_proof",
+]);
 function buildContactNameMap(value) {
     const map = new Map();
     const contacts = Array.isArray(value?.contacts) ? value.contacts : [];
@@ -25,6 +31,33 @@ function normalizeMessageText(message) {
     }
     return `[${message.type ?? "unknown"} message]`;
 }
+function toRecord(value) {
+    return value && typeof value === "object" && !Array.isArray(value)
+        ? value
+        : {};
+}
+export function sanitizeRawObject(value) {
+    if (value === undefined) {
+        return null;
+    }
+    if (Array.isArray(value)) {
+        return value.map((item) => sanitizeRawObject(item));
+    }
+    if (!value || typeof value !== "object") {
+        return value;
+    }
+    const rawObject = value;
+    const sanitized = {};
+    for (const [key, nestedValue] of Object.entries(rawObject)) {
+        const loweredKey = key.toLowerCase();
+        if (REDACTED_FIELDS.has(loweredKey)) {
+            sanitized[key] = "[REDACTED]";
+            continue;
+        }
+        sanitized[key] = sanitizeRawObject(nestedValue);
+    }
+    return sanitized;
+}
 export function extractInboundMessages(payload) {
     const normalized = [];
     const entries = Array.isArray(payload?.entry) ? payload.entry : [];
@@ -47,7 +80,7 @@ export function extractInboundMessages(payload) {
                     timestamp: message?.timestamp ?? null,
                     type: message?.type ?? "unknown",
                     text: normalizeMessageText(message),
-                    raw: message,
+                    raw: toRecord(message),
                 });
             }
         }

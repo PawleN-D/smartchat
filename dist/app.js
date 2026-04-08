@@ -7,6 +7,20 @@ export function buildApp({ env, container, logger }) {
         logger,
         trustProxy: true,
     });
+    app.addContentTypeParser("application/json", { parseAs: "string" }, (request, body, done) => {
+        const rawBody = typeof body === "string" ? body : body.toString("utf8");
+        request.rawBody = rawBody;
+        if (rawBody.length === 0) {
+            done(null, {});
+            return;
+        }
+        try {
+            done(null, JSON.parse(rawBody));
+        }
+        catch (error) {
+            done(error, undefined);
+        }
+    });
     app.register(healthRoutes);
     app.register(webhookRoutes, {
         prefix: "/webhook",
@@ -15,10 +29,11 @@ export function buildApp({ env, container, logger }) {
     });
     app.setErrorHandler((error, request, reply) => {
         const isKnown = isAppError(error);
+        const rawStatusCode = error.statusCode;
         const statusCode = isKnown
             ? error.statusCode
-            : Number.isInteger(error.statusCode)
-                ? error.statusCode
+            : Number.isInteger(rawStatusCode)
+                ? Number(rawStatusCode)
                 : 500;
         const errorCode = isKnown ? error.code : "INTERNAL_SERVER_ERROR";
         request.log.error({

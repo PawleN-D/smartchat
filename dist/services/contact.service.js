@@ -1,3 +1,4 @@
+import { Prisma, } from "@prisma/client";
 export class ContactService {
     prisma;
     constructor({ prisma }) {
@@ -28,10 +29,14 @@ export class ContactService {
             return { contact: created, created: true };
         }
         catch (error) {
-            if (error?.code === "P2002") {
+            if (error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === "P2002") {
                 const recovered = await this.prisma.contact.findUnique({
                     where: { waId },
                 });
+                if (!recovered) {
+                    throw new Error(`Contact recovery failed after duplicate key for waId=${waId}`);
+                }
                 return { contact: recovered, created: false };
             }
             throw error;

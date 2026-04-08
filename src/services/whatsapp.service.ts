@@ -1,14 +1,49 @@
 import { AppError } from "../utils/errors.js";
 import { withRetry } from "../utils/retry.js";
+import type { AppLogger } from "../types/app.js";
+
+interface SendTextMessageInput {
+  to: string;
+  text: string;
+  replyToMessageId: string | null;
+}
+
+interface WhatsAppSendResponseMessage {
+  id?: string;
+  [key: string]: unknown;
+}
+
+interface WhatsAppSendResponse {
+  messages?: WhatsAppSendResponseMessage[];
+  [key: string]: unknown;
+}
+
+function isRetryableError(error: unknown): boolean {
+  return (
+    error instanceof AppError &&
+    error.code === "WHATSAPP_SEND_FAILED" &&
+    error.retryable
+  );
+}
 
 export class WhatsAppService {
   accessToken: string;
   phoneNumberId: string;
   graphVersion: string;
-  logger: any;
+  logger: AppLogger;
   maxRetries: number;
 
-  constructor({ accessToken, phoneNumberId, graphVersion, logger }: any) {
+  constructor({
+    accessToken,
+    phoneNumberId,
+    graphVersion,
+    logger,
+  }: {
+    accessToken: string;
+    phoneNumberId: string;
+    graphVersion: string;
+    logger: AppLogger;
+  }) {
     this.accessToken = accessToken;
     this.phoneNumberId = phoneNumberId;
     this.graphVersion = graphVersion;
@@ -20,7 +55,11 @@ export class WhatsAppService {
     return `https://graph.facebook.com/${this.graphVersion}/${this.phoneNumberId}/messages`;
   }
 
-  async sendTextMessage({ to, text, replyToMessageId }) {
+  async sendTextMessage({
+    to,
+    text,
+    replyToMessageId,
+  }: SendTextMessageInput): Promise<WhatsAppSendResponse> {
     const payload = {
       messaging_product: "whatsapp",
       to,
@@ -49,7 +88,9 @@ export class WhatsAppService {
           body: JSON.stringify(payload),
         });
 
-        const body = await response.json().catch(() => ({}));
+        const body = (await response
+          .json()
+          .catch(() => ({}))) as WhatsAppSendResponse;
         if (!response.ok) {
           const retryable = response.status >= 500;
           throw new AppError("Failed to send WhatsApp message", {
@@ -69,7 +110,7 @@ export class WhatsAppService {
         retries: this.maxRetries,
         minDelayMs: 400,
         factor: 2,
-        shouldRetry: (error) => Boolean((error as any)?.retryable),
+        shouldRetry: (error) => isRetryableError(error),
       }
     );
   }

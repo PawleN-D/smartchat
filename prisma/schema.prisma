@@ -43,33 +43,32 @@ model MessageLog {
   direction   MessageDirection
   content     String
   messageType String?
-  waMessageId String?
+  waMessageId String?          @unique
   metadata    Json?
   createdAt   DateTime         @default(now())
 
   @@index([contactId, createdAt])
-  @@index([waMessageId])
 }
 
 model InteractionSession {
-  id            String       @id @default(cuid())
-  contactId     String
-  contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  status        SessionStatus @default(open)
-  startedAt     DateTime     @default(now())
-  lastInboundAt DateTime?
+  id             String        @id @default(cuid())
+  contactId      String
+  contact        Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status         SessionStatus @default(open)
+  startedAt      DateTime      @default(now())
+  lastInboundAt  DateTime?
   lastOutboundAt DateTime?
-  closedAt      DateTime?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  closedAt       DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([contactId, status])
 }
 
 model AILog {
-  id             String      @id @default(cuid())
+  id             String       @id @default(cuid())
   contactId      String?
-  contact        Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
   kind           String
   model          String
   input          String
@@ -77,7 +76,7 @@ model AILog {
   classification ContactType?
   confidence     Float?
   metadata       Json?
-  createdAt      DateTime    @default(now())
+  createdAt      DateTime     @default(now())
 
   @@index([contactId, createdAt])
   @@index([kind, createdAt])

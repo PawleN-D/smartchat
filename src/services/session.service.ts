@@ -1,4 +1,6 @@
-function toDateFromUnixSeconds(value) {
+import type { InteractionSession, PrismaClient } from "@prisma/client";
+
+function toDateFromUnixSeconds(value: string | null): Date {
   if (!value) return new Date();
   const asNumber = Number(value);
   if (Number.isNaN(asNumber)) return new Date();
@@ -6,13 +8,13 @@ function toDateFromUnixSeconds(value) {
 }
 
 export class SessionService {
-  prisma: any;
+  prisma: PrismaClient;
 
-  constructor({ prisma }: any) {
+  constructor({ prisma }: { prisma: PrismaClient }) {
     this.prisma = prisma;
   }
 
-  async ensureOpenSession(contactId) {
+  async ensureOpenSession(contactId: string): Promise<InteractionSession> {
     const existing = await this.prisma.interactionSession.findFirst({
       where: {
         contactId,
@@ -33,7 +35,10 @@ export class SessionService {
     });
   }
 
-  async touchInbound(contactId, timestamp) {
+  async touchInbound(
+    contactId: string,
+    timestamp: string | null
+  ): Promise<InteractionSession> {
     const session = await this.ensureOpenSession(contactId);
     return this.prisma.interactionSession.update({
       where: { id: session.id },
@@ -43,7 +48,7 @@ export class SessionService {
     });
   }
 
-  async touchOutbound(contactId) {
+  async touchOutbound(contactId: string): Promise<InteractionSession> {
     const session = await this.ensureOpenSession(contactId);
     return this.prisma.interactionSession.update({
       where: { id: session.id },

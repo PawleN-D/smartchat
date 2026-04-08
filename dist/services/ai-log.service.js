@@ -13,11 +13,11 @@ export class AILogService {
                 output,
                 classification,
                 confidence,
-                metadata,
+                metadata: metadata,
             },
         });
     }
-    async logReply({ contactId, model, input, output, metadata = {} }) {
+    async logReply({ contactId, model, input, output, metadata = {}, }) {
         return this.prisma.aILog.create({
             data: {
                 contactId,
@@ -25,7 +25,7 @@ export class AILogService {
                 model,
                 input,
                 output,
-                metadata,
+                metadata: metadata,
             },
         });
     }
