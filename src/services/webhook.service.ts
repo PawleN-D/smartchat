@@ -1,0 +1,142 @@
+import { DISAMBIGUATION_QUESTION } from "../config/prompts.js";
+import { RouteAction } from "./routing.service.js";
+
+export class WebhookService {
+  contactService: any;
+  messageLogService: any;
+  aiLogService: any;
+  sessionService: any;
+  classificationService: any;
+  routingService: any;
+  openaiService: any;
+  whatsappService: any;
+  logger: any;
+
+  constructor({
+    contactService,
+    messageLogService,
+    aiLogService,
+    sessionService,
+    classificationService,
+    routingService,
+    openaiService,
+    whatsappService,
+    logger,
+  }: any) {
+    this.contactService = contactService;
+    this.messageLogService = messageLogService;
+    this.aiLogService = aiLogService;
+    this.sessionService = sessionService;
+    this.classificationService = classificationService;
+    this.routingService = routingService;
+    this.openaiService = openaiService;
+    this.whatsappService = whatsappService;
+    this.logger = logger;
+  }
+
+  async processInboundMessages(messages) {
+    for (const message of messages) {
+      await this.processSingleInboundMessage(message);
+    }
+  }
+
+  async processSingleInboundMessage(message) {
+    const { contact: initialContact } = await this.contactService.getOrCreate({
+      waId: message.waId,
+      name: message.name,
+    });
+
+    await this.messageLogService.logInbound(initialContact.id, message);
+    await this.sessionService.touchInbound(initialContact.id, message.timestamp);
+
+    const inboundCount = await this.messageLogService.countInboundForContact(
+      initialContact.id
+    );
+
+    let contact = initialContact;
+    if (contact.type === "unknown") {
+      const classification = await this.classificationService.classify({
+        text: message.text,
+        isFirstMessage: inboundCount === 1,
+      });
+
+      await this.aiLogService.logClassification({
+        contactId: contact.id,
+        model: classification.model ?? "heuristic",
+        input: message.text,
+        output: classification.output ?? classification.reason,
+        classification: classification.type,
+        confidence: classification.confidence,
+        metadata: {
+          source: classification.source,
+          isFirstMessage: inboundCount === 1,
+        },
+      });
+
+      if (classification.type !== "unknown") {
+        contact = await this.contactService.updateType(contact.id, classification.type);
+      }
+    }
+
+    const routeAction = this.routingService.resolve(contact);
+
+    if (routeAction === RouteAction.SILENCE) {
+      this.logger.info(
+        { waId: message.waId, type: contact.type },
+        "Message silenced by router"
+      );
+      return;
+    }
+
+    if (routeAction === RouteAction.ASK_DISAMBIGUATION) {
+      const waResponse = await this.whatsappService.sendTextMessage({
+        to: message.waId,
+        text: DISAMBIGUATION_QUESTION,
+        replyToMessageId: message.messageId,
+      });
+
+      await this.messageLogService.logOutbound(
+        contact.id,
+        DISAMBIGUATION_QUESTION,
+        waResponse?.messages?.[0]?.id ?? null,
+        { routeAction }
+      );
+
+      await this.contactService.markDisambiguationAsked(contact.id);
+      await this.sessionService.touchOutbound(contact.id);
+      return;
+    }
+
+    if (routeAction === RouteAction.RESPOND_AI) {
+      const ai = await this.openaiService.generateBusinessReply({
+        contactName: contact.name,
+        userMessage: message.text,
+      });
+
+      const waResponse = await this.whatsappService.sendTextMessage({
+        to: message.waId,
+        text: ai.text,
+        replyToMessageId: message.messageId,
+      });
+
+      await this.aiLogService.logReply({
+        contactId: contact.id,
+        model: ai.model,
+        input: message.text,
+        output: ai.text,
+        metadata: {
+          routeAction,
+        },
+      });
+
+      await this.messageLogService.logOutbound(
+        contact.id,
+        ai.text,
+        waResponse?.messages?.[0]?.id ?? null,
+        { routeAction }
+      );
+
+      await this.sessionService.touchOutbound(contact.id);
+    }
+  }
+}

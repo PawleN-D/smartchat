@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContactType {
+  business
+  personal
+  unknown
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+enum SessionStatus {
+  open
+  closed
+}
+
+model Contact {
+  id                    String               @id @default(cuid())
+  waId                  String               @unique
+  name                  String?
+  type                  ContactType          @default(unknown)
+  disambiguationAskedAt DateTime?
+  messages              MessageLog[]
+  sessions              InteractionSession[]
+  aiLogs                AILog[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model MessageLog {
+  id          String           @id @default(cuid())
+  contactId   String
+  contact     Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  direction   MessageDirection
+  content     String
+  messageType String?
+  waMessageId String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+
+  @@index([contactId, createdAt])
+  @@index([waMessageId])
+}
+
+model InteractionSession {
+  id            String       @id @default(cuid())
+  contactId     String
+  contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status        SessionStatus @default(open)
+  startedAt     DateTime     @default(now())
+  lastInboundAt DateTime?
+  lastOutboundAt DateTime?
+  closedAt      DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([contactId, status])
+}
+
+model AILog {
+  id             String      @id @default(cuid())
+  contactId      String?
+  contact        Contact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  kind           String
+  model          String
+  input          String
+  output         String?
+  classification ContactType?
+  confidence     Float?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  @@index([contactId, createdAt])
+  @@index([kind, createdAt])
+}

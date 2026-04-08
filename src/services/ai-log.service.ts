@@ -1,0 +1,43 @@
+export class AILogService {
+  prisma: any;
+
+  constructor({ prisma }: any) {
+    this.prisma = prisma;
+  }
+
+  async logClassification({
+    contactId,
+    model,
+    input,
+    output,
+    classification,
+    confidence,
+    metadata = {},
+  }) {
+    return this.prisma.aILog.create({
+      data: {
+        contactId,
+        kind: "classification",
+        model,
+        input,
+        output,
+        classification,
+        confidence,
+        metadata,
+      },
+    });
+  }
+
+  async logReply({ contactId, model, input, output, metadata = {} }) {
+    return this.prisma.aILog.create({
+      data: {
+        contactId,
+        kind: "reply",
+        model,
+        input,
+        output,
+        metadata,
+      },
+    });
+  }
+}
