@@ -1,4 +1,6 @@
-export default async function healthRoutes(app: any) {
+import type { FastifyPluginAsync } from "fastify";
+
+const healthRoutes: FastifyPluginAsync = async (app) => {
   app.get("/health", async () => {
     return {
       ok: true,
@@ -6,4 +8,6 @@ export default async function healthRoutes(app: any) {
       timestamp: new Date().toISOString(),
     };
   });
-}
+};
+
+export default healthRoutes;

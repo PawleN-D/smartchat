@@ -29,7 +29,7 @@ async function start() {
 }
 
 let isShuttingDown = false;
-async function shutdown(signal) {
+async function shutdown(signal: NodeJS.Signals): Promise<void> {
   if (isShuttingDown) return;
   isShuttingDown = true;
 

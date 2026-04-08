@@ -11,10 +11,10 @@ interface RetryOptions {
   shouldRetry?: (error: unknown, attempt: number) => boolean;
 }
 
-export async function withRetry(
-  fn: (attempt: number) => Promise<unknown>,
+export async function withRetry<T>(
+  fn: (attempt: number) => Promise<T>,
   { retries = 2, minDelayMs = 300, factor = 2, shouldRetry = () => true }: RetryOptions = {}
-) {
+): Promise<T> {
   let attempts = 0;
   while (true) {
     try {

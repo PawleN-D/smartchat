@@ -1,7 +1,32 @@
-export class AILogService {
-  prisma: any;
+import {
+  type AILog,
+  type ContactType,
+  type Prisma,
+  type PrismaClient,
+} from "@prisma/client";
 
-  constructor({ prisma }: any) {
+interface LogClassificationInput {
+  contactId: string;
+  model: string;
+  input: string;
+  output: string;
+  classification: ContactType;
+  confidence: number | null;
+  metadata?: Record<string, unknown>;
+}
+
+interface LogReplyInput {
+  contactId: string;
+  model: string;
+  input: string;
+  output: string;
+  metadata?: Record<string, unknown>;
+}
+
+export class AILogService {
+  prisma: PrismaClient;
+
+  constructor({ prisma }: { prisma: PrismaClient }) {
     this.prisma = prisma;
   }
 
@@ -13,7 +38,7 @@ export class AILogService {
     classification,
     confidence,
     metadata = {},
-  }) {
+  }: LogClassificationInput): Promise<AILog> {
     return this.prisma.aILog.create({
       data: {
         contactId,
@@ -23,12 +48,18 @@ export class AILogService {
         output,
         classification,
         confidence,
-        metadata,
+        metadata: metadata as Prisma.InputJsonValue,
       },
     });
   }
 
-  async logReply({ contactId, model, input, output, metadata = {} }) {
+  async logReply({
+    contactId,
+    model,
+    input,
+    output,
+    metadata = {},
+  }: LogReplyInput): Promise<AILog> {
     return this.prisma.aILog.create({
       data: {
         contactId,
@@ -36,7 +67,7 @@ export class AILogService {
         model,
         input,
         output,
-        metadata,
+        metadata: metadata as Prisma.InputJsonValue,
       },
     });
   }

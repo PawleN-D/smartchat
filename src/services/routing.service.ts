@@ -1,11 +1,15 @@
+import type { Contact } from "@prisma/client";
+
 export const RouteAction = Object.freeze({
   SILENCE: "silence",
   ASK_DISAMBIGUATION: "ask_disambiguation",
   RESPOND_AI: "respond_ai",
 });
 
+export type RouteAction = (typeof RouteAction)[keyof typeof RouteAction];
+
 export class RoutingService {
-  resolve(contact) {
+  resolve(contact: Contact): RouteAction {
     if (contact.type === "personal") {
       return RouteAction.SILENCE;
     }

@@ -31,7 +31,14 @@ export class WebhookService {
             waId: message.waId,
             name: message.name,
         });
-        await this.messageLogService.logInbound(initialContact.id, message);
+        const inboundLog = await this.messageLogService.logInbound(initialContact.id, message);
+        if (inboundLog.status === "duplicate") {
+            this.logger.info({
+                waId: message.waId,
+                waMessageId: inboundLog.waMessageId,
+            }, "Skipping duplicate inbound message");
+            return;
+        }
         await this.sessionService.touchInbound(initialContact.id, message.timestamp);
         const inboundCount = await this.messageLogService.countInboundForContact(initialContact.id);
         let contact = initialContact;

@@ -1,19 +1,45 @@
+import type { ContactType } from "@prisma/client";
+import type { AppLogger } from "../types/app.js";
 import {
   hasBusinessKeywords,
   isGreetingOnly,
   normalizeIntent,
 } from "../utils/classification-helpers.js";
+import type { OpenAIService } from "./openai.service.js";
+
+interface ClassifyInput {
+  text: string;
+  isFirstMessage: boolean;
+}
+
+export interface ClassificationResult {
+  type: ContactType;
+  confidence: number | null;
+  reason: string;
+  source: "heuristic" | "openai" | "fallback";
+  model: string | null;
+  output: string | null;
+}
 
 export class ClassificationService {
-  openaiService: any;
-  logger: any;
+  openaiService: OpenAIService;
+  logger: AppLogger;
 
-  constructor({ openaiService, logger }: any) {
+  constructor({
+    openaiService,
+    logger,
+  }: {
+    openaiService: OpenAIService;
+    logger: AppLogger;
+  }) {
     this.openaiService = openaiService;
     this.logger = logger;
   }
 
-  async classify({ text, isFirstMessage }) {
+  async classify({
+    text,
+    isFirstMessage,
+  }: ClassifyInput): Promise<ClassificationResult> {
     const content = String(text ?? "").trim();
     const greetingOnly = isGreetingOnly(content);
     const hasKeywords = hasBusinessKeywords(content);

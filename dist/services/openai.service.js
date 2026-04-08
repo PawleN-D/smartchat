@@ -7,7 +7,10 @@ function extractJsonObject(text) {
         return null;
     const directParse = (() => {
         try {
-            return JSON.parse(text);
+            const parsed = JSON.parse(text);
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                ? parsed
+                : null;
         }
         catch {
             return null;
@@ -19,7 +22,10 @@ function extractJsonObject(text) {
     if (!match)
         return null;
     try {
-        return JSON.parse(match[0]);
+        const parsed = JSON.parse(match[0]);
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            ? parsed
+            : null;
     }
     catch {
         return null;
@@ -31,16 +37,19 @@ function normalizeConfidence(value) {
         return null;
     return Math.max(0, Math.min(1, asNumber));
 }
+function getErrorMessage(error) {
+    return error instanceof Error ? error.message : "Unknown error";
+}
 export class OpenAIService {
     client;
     model;
     logger;
-    constructor({ apiKey, model, logger }) {
+    constructor({ apiKey, model, logger, }) {
         this.client = new OpenAI({ apiKey });
         this.model = model;
         this.logger = logger;
     }
-    async classifyContactIntent({ text, hasKeywords, greetingOnly, isFirstMessage }) {
+    async classifyContactIntent({ text, hasKeywords, greetingOnly, isFirstMessage, }) {
         try {
             const response = await this.client.responses.create({
                 model: this.model,
@@ -70,12 +79,12 @@ export class OpenAIService {
                 statusCode: 502,
                 code: "OPENAI_CLASSIFICATION_ERROR",
                 details: {
-                    message: error.message,
+                    message: getErrorMessage(error),
                 },
             });
         }
     }
-    async generateBusinessReply({ contactName, userMessage }) {
+    async generateBusinessReply({ contactName, userMessage, }) {
         try {
             const response = await this.client.responses.create({
                 model: this.model,
@@ -102,7 +111,7 @@ export class OpenAIService {
                 statusCode: 502,
                 code: "OPENAI_REPLY_ERROR",
                 details: {
-                    message: error.message,
+                    message: getErrorMessage(error),
                 },
             });
         }

@@ -8,7 +8,7 @@ import { RoutingService } from "./services/routing.service.js";
 import { SessionService } from "./services/session.service.js";
 import { WebhookService } from "./services/webhook.service.js";
 import { WhatsAppService } from "./services/whatsapp.service.js";
-export function buildContainer({ env, logger }) {
+export function buildContainer({ env, logger, }) {
     const prisma = createPrismaClient();
     const contactService = new ContactService({ prisma });
     const messageLogService = new MessageLogService({ prisma });

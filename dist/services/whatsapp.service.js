@@ -1,12 +1,17 @@
 import { AppError } from "../utils/errors.js";
 import { withRetry } from "../utils/retry.js";
+function isRetryableError(error) {
+    return (error instanceof AppError &&
+        error.code === "WHATSAPP_SEND_FAILED" &&
+        error.retryable);
+}
 export class WhatsAppService {
     accessToken;
     phoneNumberId;
     graphVersion;
     logger;
     maxRetries;
-    constructor({ accessToken, phoneNumberId, graphVersion, logger }) {
+    constructor({ accessToken, phoneNumberId, graphVersion, logger, }) {
         this.accessToken = accessToken;
         this.phoneNumberId = phoneNumberId;
         this.graphVersion = graphVersion;
@@ -16,7 +21,7 @@ export class WhatsAppService {
     get messagesUrl() {
         return `https://graph.facebook.com/${this.graphVersion}/${this.phoneNumberId}/messages`;
     }
-    async sendTextMessage({ to, text, replyToMessageId }) {
+    async sendTextMessage({ to, text, replyToMessageId, }) {
         const payload = {
             messaging_product: "whatsapp",
             to,
@@ -42,7 +47,9 @@ export class WhatsAppService {
                 },
                 body: JSON.stringify(payload),
             });
-            const body = await response.json().catch(() => ({}));
+            const body = (await response
+                .json()
+                .catch(() => ({})));
             if (!response.ok) {
                 const retryable = response.status >= 500;
                 throw new AppError("Failed to send WhatsApp message", {
@@ -60,7 +67,7 @@ export class WhatsAppService {
             retries: this.maxRetries,
             minDelayMs: 400,
             factor: 2,
-            shouldRetry: (error) => Boolean(error?.retryable),
+            shouldRetry: (error) => isRetryableError(error),
         });
     }
 }

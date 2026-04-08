@@ -1,3 +1,5 @@
+import type { ContactType } from "@prisma/client";
+
 export const BUSINESS_KEYWORDS = [
   "quote",
   "booking",
@@ -21,7 +23,7 @@ export const BUSINESS_KEYWORDS = [
 const GREETING_ONLY_REGEX =
   /^(hi+|hello+|hey+|howzit|good (morning|afternoon|evening)|yo+|sup+|hiya|molo|sawubona|dumela|sanibonani)[!.?, ]*$/i;
 
-export function normalizeIntent(intent) {
+export function normalizeIntent(intent: unknown): ContactType {
   const value = String(intent || "").toLowerCase().trim();
   if (value === "business" || value === "personal" || value === "unknown") {
     return value;
@@ -29,12 +31,12 @@ export function normalizeIntent(intent) {
   return "unknown";
 }
 
-export function hasBusinessKeywords(text) {
+export function hasBusinessKeywords(text: string): boolean {
   const value = String(text || "").toLowerCase();
   return BUSINESS_KEYWORDS.some((keyword) => value.includes(keyword));
 }
 
-export function isGreetingOnly(text) {
+export function isGreetingOnly(text: string): boolean {
   const value = String(text || "").trim();
   if (!value) return false;
   return GREETING_ONLY_REGEX.test(value);

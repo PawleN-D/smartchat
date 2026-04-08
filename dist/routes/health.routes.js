@@ -1,4 +1,4 @@
-export default async function healthRoutes(app) {
+const healthRoutes = async (app) => {
     app.get("/health", async () => {
         return {
             ok: true,
@@ -6,4 +6,5 @@ export default async function healthRoutes(app) {
             timestamp: new Date().toISOString(),
         };
     });
-}
+};
+export default healthRoutes;

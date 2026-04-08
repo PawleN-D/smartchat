@@ -2,11 +2,11 @@ import { hasBusinessKeywords, isGreetingOnly, normalizeIntent, } from "../utils/
 export class ClassificationService {
     openaiService;
     logger;
-    constructor({ openaiService, logger }) {
+    constructor({ openaiService, logger, }) {
         this.openaiService = openaiService;
         this.logger = logger;
     }
-    async classify({ text, isFirstMessage }) {
+    async classify({ text, isFirstMessage, }) {
         const content = String(text ?? "").trim();
         const greetingOnly = isGreetingOnly(content);
         const hasKeywords = hasBusinessKeywords(content);
