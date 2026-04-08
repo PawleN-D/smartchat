@@ -1,63 +1,38 @@
-export interface WhatsAppProfile {
-  name?: string;
-}
-
 export interface WhatsAppContact {
   wa_id?: string;
-  profile?: WhatsAppProfile;
+  profile?: { name?: string };
 }
 
-export interface WhatsAppTextContent {
-  body?: string;
-}
-
-export interface WhatsAppInteractiveReply {
-  title?: string;
-}
-
-export interface WhatsAppInteractiveContent {
-  button_reply?: WhatsAppInteractiveReply;
-  list_reply?: WhatsAppInteractiveReply;
-}
-
-export interface WhatsAppMediaContent {
-  caption?: string;
-}
-
-export interface WhatsAppInboundMessage {
+export interface WhatsAppInboundMessage extends Record<string, unknown> {
   from?: string;
   id?: string;
   timestamp?: string;
   type?: string;
-  text?: WhatsAppTextContent;
-  interactive?: WhatsAppInteractiveContent;
-  image?: WhatsAppMediaContent;
-  video?: WhatsAppMediaContent;
-  [key: string]: unknown;
+  text?: { body?: string };
+  interactive?: {
+    button_reply?: { title?: string };
+    list_reply?: { title?: string };
+  };
+  image?: { caption?: string };
+  video?: { caption?: string };
 }
 
-export interface WhatsAppChangeValue {
+export interface WhatsAppChangeValue extends Record<string, unknown> {
   contacts?: WhatsAppContact[];
   messages?: WhatsAppInboundMessage[];
-  [key: string]: unknown;
 }
 
-export interface WhatsAppWebhookChange {
-  field?: string;
+export interface WhatsAppWebhookChange extends Record<string, unknown> {
   value?: WhatsAppChangeValue;
-  [key: string]: unknown;
 }
 
-export interface WhatsAppWebhookEntry {
-  id?: string;
+export interface WhatsAppWebhookEntry extends Record<string, unknown> {
   changes?: WhatsAppWebhookChange[];
-  [key: string]: unknown;
 }
 
-export interface WhatsAppWebhookPayload {
+export interface WhatsAppWebhookPayload extends Record<string, unknown> {
   object?: string;
   entry?: WhatsAppWebhookEntry[];
-  [key: string]: unknown;
 }
 
 export interface NormalizedInboundMessage {

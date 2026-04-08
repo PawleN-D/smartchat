@@ -42,16 +42,8 @@ export function createWebhookController({ env, webhookService, logger, }) {
                 logger.error({
                     err: error,
                     inboundCount: inboundMessages.length,
-                    waIds: collectDistinctWaIds(inboundMessages),
                 }, "Asynchronous webhook processing failed");
             });
         },
     };
-}
-function collectDistinctWaIds(messages) {
-    const ids = new Set();
-    for (const message of messages) {
-        ids.add(message.waId);
-    }
-    return [...ids];
 }

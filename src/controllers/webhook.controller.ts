@@ -1,9 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { AppLogger, EnvConfig } from "../types/app.js";
-import type {
-  NormalizedInboundMessage,
-  WhatsAppWebhookPayload,
-} from "../types/webhook.js";
+import type { WhatsAppWebhookPayload } from "../types/webhook.js";
 import { extractInboundMessages } from "../utils/normalizers.js";
 import { verifySignature } from "../utils/verifySignature.js";
 import type { WebhookService } from "../services/webhook.service.js";
@@ -98,19 +95,10 @@ export function createWebhookController({
             {
               err: error,
               inboundCount: inboundMessages.length,
-              waIds: collectDistinctWaIds(inboundMessages),
             },
             "Asynchronous webhook processing failed"
           );
         });
     },
   };
-}
-
-function collectDistinctWaIds(messages: NormalizedInboundMessage[]): string[] {
-  const ids = new Set<string>();
-  for (const message of messages) {
-    ids.add(message.waId);
-  }
-  return [...ids];
 }

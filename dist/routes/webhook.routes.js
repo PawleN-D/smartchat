@@ -2,14 +2,12 @@ import { createWebhookController } from "../controllers/webhook.controller.js";
 const EMPTY_OBJECT_SCHEMA = {
     type: "object",
     additionalProperties: false,
-    properties: {},
 };
 const VERIFY_WEBHOOK_SCHEMA = {
     params: EMPTY_OBJECT_SCHEMA,
     headers: {
         type: "object",
         additionalProperties: true,
-        properties: {},
     },
     querystring: {
         type: "object",
@@ -38,34 +36,7 @@ const RECEIVE_WEBHOOK_SCHEMA = {
         required: ["entry"],
         additionalProperties: true,
         properties: {
-            object: { type: "string" },
-            entry: {
-                type: "array",
-                items: {
-                    type: "object",
-                    required: ["changes"],
-                    additionalProperties: true,
-                    properties: {
-                        id: { type: "string" },
-                        changes: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                required: ["value"],
-                                additionalProperties: true,
-                                properties: {
-                                    field: { type: "string" },
-                                    value: {
-                                        type: "object",
-                                        additionalProperties: true,
-                                        properties: {},
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
+            entry: { type: "array" },
         },
     },
 };
